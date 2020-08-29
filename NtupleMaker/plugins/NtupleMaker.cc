@@ -59,6 +59,15 @@
 /////////////////////
 #include "DataFormats/PatCandidates/interface/Muon.h"
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
+
+/////////////////////////
+// -- For Electrons -- //
+/////////////////////////
+#include "DataFormats/PatCandidates/interface/Electron.h"
+#include "RecoEgamma/EgammaTools/interface/EffectiveAreas.h"
+#include "DataFormats/EgammaCandidates/interface/ConversionFwd.h"
+#include "DataFormats/EgammaCandidates/interface/Conversion.h"
+#include "RecoEgamma/EgammaTools/interface/ConversionTools.h"
 ////////////////////
 // -- For Jets -- //
 ////////////////////
@@ -71,6 +80,7 @@
 #include "ZprimeTollMET/NtupleMaker/interface/Trigger.h"
 #include "ZprimeTollMET/NtupleMaker/interface/GenParticle.h"
 #include "ZprimeTollMET/NtupleMaker/interface/Muon.h"
+#include "ZprimeTollMET/NtupleMaker/interface/Electron.h"
 #include "ZprimeTollMET/NtupleMaker/interface/Jet.h"
 #include "ZprimeTollMET/NtupleMaker/interface/MET.h"
 
@@ -102,6 +112,7 @@ class NtupleMaker : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
       virtual void fillTriggers(const edm::Event& iEvent);
       virtual void fillGenParticles(const edm::Event& iEvent);
       virtual void fillMuons(const edm::Event& iEvent);
+      virtual void fillElectrons(const edm::Event& iEvent);
       virtual void fillMET(const edm::Event& iEvent);
       virtual void fillJet(const edm::Event& iEvent);
       bool isNewHighPtMuon(const reco::Muon& muon, const reco::Vertex& vtx);
@@ -115,8 +126,11 @@ class NtupleMaker : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
       edm::EDGetTokenT<std::vector<pat::TriggerObjectStandAlone>> t_trigobject;      
       edm::EDGetTokenT<std::vector<reco::Vertex>> t_pv;
       edm::EDGetTokenT<reco::GenParticleCollection> t_genparticle;
+      edm::EDGetTokenT<GenEventInfoProduct> t_genevtinfo;
       edm::EDGetTokenT<std::vector<pat::Muon>> t_muon;
+      edm::EDGetTokenT<std::vector<pat::Electron>> t_electron;
       edm::EDGetTokenT<std::vector<pat::Jet>> t_jet;
+      // edm::EDGetTokenT<std::vector<pat::Jet>> t_DeepFlavour;
       edm::EDGetTokenT<std::vector<pat::MET>> t_MET;
       
       edm::Handle<std::vector<reco::Vertex>> h_pv;
@@ -127,11 +141,14 @@ class NtupleMaker : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
       Ntuple::TrigObj trigobjects_;
       Ntuple::GenParticleCollection genparticles_;
       Ntuple::MuonCollection muons_;
+      Ntuple::ElectronCollection electrons_;
       Ntuple::JetCollection jets_;
       Ntuple::METevt metevt_;
 
       int ngenparticles_ = 0;
+      float genweight_ = 1;
       int nmuons_ = 0;
+      int nelectrons_ = 0;
       int njets_ = 0;
 };
 
@@ -153,8 +170,11 @@ t_trigresultPAT        (consumes<edm::TriggerResults>                       (iCo
 t_trigobject        (consumes<std::vector<pat::TriggerObjectStandAlone>> (iConfig.getUntrackedParameter<edm::InputTag>("triggerobjects"))),
 t_pv                ( consumes<std::vector<reco::Vertex>>              (iConfig.getUntrackedParameter<edm::InputTag>("pvs"))),
 t_genparticle       ( consumes<reco::GenParticleCollection>            (iConfig.getUntrackedParameter<edm::InputTag>("genparticles"       )) ),
+t_genevtinfo        ( consumes<GenEventInfoProduct>                    (iConfig.getUntrackedParameter<edm::InputTag>("genevtinfo"       )) ),
 t_muon              ( consumes<std::vector<pat::Muon>>                 (iConfig.getUntrackedParameter<edm::InputTag>("muons"       )) ),
+t_electron          ( consumes<std::vector<pat::Electron>>             (iConfig.getUntrackedParameter<edm::InputTag>("electrons"       )) ),
 t_jet               ( consumes<std::vector<pat::Jet>>                  (iConfig.getUntrackedParameter<edm::InputTag>("jets"       )) ),
+// t_DeepFlavour               ( consumes<std::vector<pat::Jet>>                  (iConfig.getUntrackedParameter<edm::InputTag>("DeepFlavour"       )) ),
 t_MET               ( consumes<std::vector<pat::MET>>                  (iConfig.getUntrackedParameter<edm::InputTag>("MET"       )) )
 
 {}
@@ -184,6 +204,7 @@ void NtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   trigobjects_.clear();
   genparticles_.clear();
   muons_.clear();
+  electrons_.clear();
   jets_.clear();
   metevt_.clear();
   // event_.genparticles_.clear();
@@ -191,6 +212,7 @@ void NtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   fillTriggers(iEvent);
   if(isMC) fillGenParticles(iEvent);
   fillMuons(iEvent);
+  fillElectrons(iEvent);
   fillJet(iEvent);
   fillMET(iEvent);
   ntuple_->Fill();
@@ -208,9 +230,12 @@ void NtupleMaker::beginJob()
   ntuple_->Branch("trigresults" ,&trigresults_);
   ntuple_->Branch("trigobjects" ,&trigobjects_);
   ntuple_->Branch("ngenparticles" ,&ngenparticles_, "ngenparticles/I");
+  ntuple_->Branch("genweight" ,&genweight_, "genweight/F");
   ntuple_->Branch("genparticles" ,&genparticles_);
   ntuple_->Branch("nmuons" ,&nmuons_, "nmuons/I");
   ntuple_->Branch("muons" ,&muons_);  
+  ntuple_->Branch("nelectrons" ,&nelectrons_, "nelectrons/I");
+  ntuple_->Branch("electrons" ,&electrons_); 
   ntuple_->Branch("njets" ,&njets_, "njets/I");  
   ntuple_->Branch("jets" ,&jets_);  
   ntuple_->Branch("met" ,&metevt_); 
@@ -372,6 +397,12 @@ void NtupleMaker::fillGenParticles(const edm::Event& iEvent) {
         }
     }
     ngenparticles_ = _ngenparticle;
+
+    edm::Handle<GenEventInfoProduct> h_genevtinfo;
+    iEvent.getByToken(t_genevtinfo, h_genevtinfo);
+    genweight_ = h_genevtinfo->weight();
+    // if(h_genevtinfo->weight()<0) genweight_=-1;
+    // cout << genweight_ << endl;
 }
 
 void NtupleMaker::fillMuons(const edm::Event& iEvent) {
@@ -587,6 +618,46 @@ void NtupleMaker::fillMuons(const edm::Event& iEvent) {
     // nmuons_ = _nmuons;
 }
 
+void NtupleMaker::fillElectrons(const edm::Event& iEvent) {
+
+    Ntuple::Electron el_;
+
+    edm::Handle<std::vector<pat::Electron>> h_electrons;
+    iEvent.getByToken(t_electron,h_electrons);
+
+    nelectrons_ = h_electrons->size();
+    if( h_electrons->size() == 0 ) return;
+
+    for( std::vector<pat::Electron>::const_iterator el = h_electrons->begin(); el != h_electrons->end(); ++el ) {    
+
+        el_.CutBasedIdVeto   = el->electronID("cutBasedElectronID-Fall17-94X-V2-veto");
+        el_.CutBasedIdLoose  = el->electronID("cutBasedElectronID-Fall17-94X-V2-loose");
+        el_.CutBasedIdMedium = el->electronID("cutBasedElectronID-Fall17-94X-V2-medium");
+        el_.CutBasedIdTight  = el->electronID("cutBasedElectronID-Fall17-94X-V2-tight");
+        el_.MVAwp80iso       = el->electronID("mvaEleID-Fall17-iso-V2-wp80");
+        el_.MVAwp80noiso     = el->electronID("mvaEleID-Fall17-noIso-V2-wp80");
+        el_.MVAwp90iso       = el->electronID("mvaEleID-Fall17-iso-V2-wp90");
+        el_.MVAwp90noiso     = el->electronID("mvaEleID-Fall17-noIso-V2-wp90");
+        el_.px               = el->px();
+        el_.py               = el->py();
+        el_.pz               = el->pz();
+        el_.pt               = el->pt();
+        el_.eta              = el->eta();
+        el_.phi              = el->phi();
+        el_.energy           = el->energy();
+        el_.charge           = el->charge();
+
+        // Isolation
+        el_.pfchHadIso  = el->pfIsolationVariables().sumChargedHadronPt;
+        el_.pfneuHadIso = el->pfIsolationVariables().sumNeutralHadronEt;
+        el_.pfgammaIso  = el->pfIsolationVariables().sumPhotonEt;
+        el_.pfpuIso     = el->pfIsolationVariables().sumPUPt;
+        el_.pfrelIso    = (el_.pfchHadIso + max<float>( 0.0, el_.pfneuHadIso + el_.pfgammaIso - 0.5 * el_.pfpuIso))/(el->pt());
+
+        electrons_.push_back(el_);
+    }
+}
+
 void NtupleMaker::fillJet(const edm::Event& iEvent) {
 
     Ntuple::Jet jet_;
@@ -606,6 +677,10 @@ void NtupleMaker::fillJet(const edm::Event& iEvent) {
         jet_.charge   = jet->jetCharge();
         jet_.flavor   = jet->partonFlavour();
         jet_.btag     = jet->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags");
+        jet_.pfDeepCSV_probb     = jet->bDiscriminator("pfDeepCSVJetTags:probb");
+        jet_.pfDeepCSV_probbb     = jet->bDiscriminator("pfDeepCSVJetTags:probbb");
+        jet_.pfDeepCSV     = jet->bDiscriminator("pfDeepCSVJetTags:probbb")+jet->bDiscriminator("pfDeepCSVJetTags:probb");
+        jet_.pfDeepFlv     = jet->bDiscriminator("pfDeepFlavourJetTags:probb")+jet->bDiscriminator("pfDeepFlavourJetTags:probbb")+jet->bDiscriminator("pfDeepFlavourJetTags:problepb");
         jet_.chfrac   = jet->chargedHadronEnergyFraction();
         jet_.nhfrac   = jet->neutralHadronEnergyFraction();
         jet_.nhemfrac = jet->neutralEmEnergyFraction();

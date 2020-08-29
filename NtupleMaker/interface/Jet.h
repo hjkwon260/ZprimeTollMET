@@ -11,14 +11,16 @@ namespace Ntuple
         Jet():
         pt(0), eta(0), phi(0),
         charge(0), flavor(0),
-        btag(0), chfrac(0), nhfrac(0), nhemfrac(0), chemfrac(0), 
+        btag(0), pfDeepCSV_probb(0), pfDeepCSV_probbb(0), pfDeepCSV(0), pfDeepFlv(0),
+        chfrac(0), nhfrac(0), nhemfrac(0), chemfrac(0), 
         chmulti(0), nhmulti(0)
         {}
         ~Jet(){}
         
         float pt, eta, phi;
         int charge, flavor;
-        float btag, chfrac, nhfrac,nhemfrac, chemfrac;
+        float btag, pfDeepCSV_probb, pfDeepCSV_probbb, pfDeepCSV, pfDeepFlv;
+        float chfrac, nhfrac,nhemfrac, chemfrac;
         int chmulti, nhmulti;
         
     };

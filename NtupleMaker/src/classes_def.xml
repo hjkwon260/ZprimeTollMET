@@ -5,6 +5,8 @@
     <class name="std::vector<Ntuple::GenParticle>" />
     <class name="Ntuple::Muon" />
     <class name="std::vector<Ntuple::Muon>" />
+    <class name="Ntuple::Electron" />
+    <class name="std::vector<Ntuple::Electron>" />
     <class name="Ntuple::Jet" />
     <class name="std::vector<Ntuple::Jet>" />
     <class name="Ntuple::MET" />
