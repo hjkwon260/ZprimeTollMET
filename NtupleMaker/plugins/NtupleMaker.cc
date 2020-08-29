@@ -123,7 +123,10 @@ class NtupleMaker : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
       edm::EDGetTokenT<edm::TriggerResults> t_trigresult;
       edm::EDGetTokenT<edm::TriggerResults> t_trigresultPAT;
-      edm::EDGetTokenT<std::vector<pat::TriggerObjectStandAlone>> t_trigobject;      
+      edm::EDGetTokenT<std::vector<pat::TriggerObjectStandAlone>> t_trigobject; 
+      edm::EDGetTokenT<double> t_prefweight;
+      edm::EDGetTokenT<double> t_prefweightup;
+      edm::EDGetTokenT<double> t_prefweightdown;     
       edm::EDGetTokenT<std::vector<reco::Vertex>> t_pv;
       edm::EDGetTokenT<reco::GenParticleCollection> t_genparticle;
       edm::EDGetTokenT<GenEventInfoProduct> t_genevtinfo;
@@ -145,6 +148,9 @@ class NtupleMaker : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
       Ntuple::JetCollection jets_;
       Ntuple::METevt metevt_;
 
+      double prefiringweight_ = 0;
+      double prefiringweightup_ = 0;
+      double prefiringweightdown_ = 0;
       int ngenparticles_ = 0;
       float genweight_ = 1;
       int nmuons_ = 0;
@@ -166,16 +172,18 @@ class NtupleMaker : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 NtupleMaker::NtupleMaker(const edm::ParameterSet& iConfig):
 isMC(iConfig.getParameter<bool>("isMC")),
 t_trigresult        (consumes<edm::TriggerResults>                       (iConfig.getUntrackedParameter<edm::InputTag>("triggerresults"))),
-t_trigresultPAT        (consumes<edm::TriggerResults>                       (iConfig.getUntrackedParameter<edm::InputTag>("triggerresultsPAT"))),
+t_trigresultPAT     (consumes<edm::TriggerResults>                       (iConfig.getUntrackedParameter<edm::InputTag>("triggerresultsPAT"))),
 t_trigobject        (consumes<std::vector<pat::TriggerObjectStandAlone>> (iConfig.getUntrackedParameter<edm::InputTag>("triggerobjects"))),
-t_pv                ( consumes<std::vector<reco::Vertex>>              (iConfig.getUntrackedParameter<edm::InputTag>("pvs"))),
-t_genparticle       ( consumes<reco::GenParticleCollection>            (iConfig.getUntrackedParameter<edm::InputTag>("genparticles"       )) ),
-t_genevtinfo        ( consumes<GenEventInfoProduct>                    (iConfig.getUntrackedParameter<edm::InputTag>("genevtinfo"       )) ),
-t_muon              ( consumes<std::vector<pat::Muon>>                 (iConfig.getUntrackedParameter<edm::InputTag>("muons"       )) ),
-t_electron          ( consumes<std::vector<pat::Electron>>             (iConfig.getUntrackedParameter<edm::InputTag>("electrons"       )) ),
-t_jet               ( consumes<std::vector<pat::Jet>>                  (iConfig.getUntrackedParameter<edm::InputTag>("jets"       )) ),
-// t_DeepFlavour               ( consumes<std::vector<pat::Jet>>                  (iConfig.getUntrackedParameter<edm::InputTag>("DeepFlavour"       )) ),
-t_MET               ( consumes<std::vector<pat::MET>>                  (iConfig.getUntrackedParameter<edm::InputTag>("MET"       )) )
+t_prefweight        (consumes<double>                                    (iConfig.getUntrackedParameter<edm::InputTag>("prefiringweight"))),
+t_prefweightup      (consumes<double>                                    (iConfig.getUntrackedParameter<edm::InputTag>("prefiringweightUp"))),
+t_prefweightdown    (consumes<double>                                    (iConfig.getUntrackedParameter<edm::InputTag>("prefiringweightDown"))),
+t_pv                (consumes<std::vector<reco::Vertex>>                 (iConfig.getUntrackedParameter<edm::InputTag>("pvs"))),
+t_genparticle       (consumes<reco::GenParticleCollection>               (iConfig.getUntrackedParameter<edm::InputTag>("genparticles"))),
+t_genevtinfo        (consumes<GenEventInfoProduct>                       (iConfig.getUntrackedParameter<edm::InputTag>("genevtinfo"))),
+t_muon              (consumes<std::vector<pat::Muon>>                    (iConfig.getUntrackedParameter<edm::InputTag>("muons"))),
+t_electron          (consumes<std::vector<pat::Electron>>                (iConfig.getUntrackedParameter<edm::InputTag>("electrons"))),
+t_jet               (consumes<std::vector<pat::Jet>>                     (iConfig.getUntrackedParameter<edm::InputTag>("jets"))),
+t_MET               (consumes<std::vector<pat::MET>>                     (iConfig.getUntrackedParameter<edm::InputTag>("MET")))
 
 {}
 
@@ -229,6 +237,9 @@ void NtupleMaker::beginJob()
 
   ntuple_->Branch("trigresults" ,&trigresults_);
   ntuple_->Branch("trigobjects" ,&trigobjects_);
+  ntuple_->Branch("prefiringweight" ,&prefiringweight_, "prefiringweight/D");
+  ntuple_->Branch("prefiringweightup" ,&prefiringweightup_, "prefiringweightup/D");
+  ntuple_->Branch("prefiringweightdown" ,&prefiringweightdown_, "prefiringweightdown/D");
   ntuple_->Branch("ngenparticles" ,&ngenparticles_, "ngenparticles/I");
   ntuple_->Branch("genweight" ,&genweight_, "genweight/F");
   ntuple_->Branch("genparticles" ,&genparticles_);
@@ -343,6 +354,18 @@ void NtupleMaker::fillTriggers(const edm::Event &iEvent) {
             }
         }
     }
+
+    edm::Handle<double> h_prefweight;
+    iEvent.getByToken(t_prefweight, h_prefweight);
+    prefiringweight_ = (*h_prefweight);
+
+    edm::Handle<double> h_prefweightup;
+    iEvent.getByToken(t_prefweightup, h_prefweightup);
+    prefiringweightup_ = (*h_prefweightup);
+
+    edm::Handle<double> h_prefweightdown;
+    iEvent.getByToken(t_prefweightdown, h_prefweightdown);
+    prefiringweightdown_ = (*h_prefweightdown);
 
 }
 

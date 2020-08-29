@@ -30,21 +30,24 @@ process.source = cms.Source("PoolSource",
 
 
 process.ntuple = cms.EDAnalyzer('NtupleMaker',
-	isMC = cms.bool(bool(options.isMC)),
-	triggerresults = cms.untracked.InputTag("TriggerResults", "", "HLT"), # only hlt
-	triggerresultsPAT = cms.untracked.InputTag("TriggerResults", "", "PAT"), # only PAT
-	triggerobjects = cms.untracked.InputTag("slimmedPatTrigger"),
-	# triggerobjects = cms.untracked.InputTag("selectedPatTrigger"), # for signal MC
-	# triggerresultsPAT = cms.untracked.InputTag("TriggerResults", "", "PAT"),
+  isMC = cms.bool(bool(options.isMC)),
+  triggerresults = cms.untracked.InputTag("TriggerResults", "", "HLT"), # only hlt
+  triggerresultsPAT = cms.untracked.InputTag("TriggerResults", "", "PAT"), # only PAT
+  triggerobjects = cms.untracked.InputTag("slimmedPatTrigger"),
+  # triggerobjects = cms.untracked.InputTag("selectedPatTrigger"), # for signal MC
+  # triggerresultsPAT = cms.untracked.InputTag("TriggerResults", "", "PAT"),
+  prefiringweight = cms.untracked.InputTag("prefiringweight:nonPrefiringProb"),
+  prefiringweightUp = cms.untracked.InputTag("prefiringweight:nonPrefiringProbUp"),
+  prefiringweightDown = cms.untracked.InputTag("prefiringweight:nonPrefiringProbDown"),
   genparticles = cms.untracked.InputTag("prunedGenParticles"),
-	genevtinfo = cms.untracked.InputTag("generator"),
+  genevtinfo = cms.untracked.InputTag("generator"),
   muons = cms.untracked.InputTag("slimmedMuons"),
-	electrons = cms.untracked.InputTag("slimmedElectrons"),
-	pvs = cms.untracked.InputTag("offlineSlimmedPrimaryVertices"),
-	# jets = cms.untracked.InputTag("slimmedJets"),
-	jets = cms.untracked.InputTag("selectedUpdatedPatJetsNewDFTraining"),
-	# DeepFlavour = cms.untracked.InputTag("selectedUpdatedPatJetsNewDFTraining"),
-	MET = cms.untracked.InputTag("slimmedMETs")
+  electrons = cms.untracked.InputTag("slimmedElectrons"),
+  pvs = cms.untracked.InputTag("offlineSlimmedPrimaryVertices"),
+  # jets = cms.untracked.InputTag("slimmedJets"),
+  jets = cms.untracked.InputTag("selectedUpdatedPatJetsNewDFTraining"),
+  # DeepFlavour = cms.untracked.InputTag("selectedUpdatedPatJetsNewDFTraining"),
+  MET = cms.untracked.InputTag("slimmedMETs")
 )
 
 process.TFileService = cms.Service("TFileService",
@@ -63,6 +66,14 @@ if options.isMC==1:
     process.GlobalTag.globaltag = cms.string("102X_mcRun2_asymptotic_v7")
 else:
     process.GlobalTag.globaltag = cms.string("102X_dataRun2_v12")
+
+# -- l1 prefireing (16, 17 ?)--#
+from PhysicsTools.PatUtils.l1ECALPrefiringWeightProducer_cfi import l1ECALPrefiringWeightProducer
+process.prefiringweight = l1ECALPrefiringWeightProducer.clone(
+    DataEra = cms.string("2016BtoH"), #Use 2017BtoF for 2017
+    UseJetEMPt = cms.bool(False),
+    PrefiringRateSystematicUncty = cms.double(0.2),
+    SkipWarnings = False)
 
 #-- Deep flavor rerun --#
 from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
@@ -91,7 +102,7 @@ setupEgammaPostRecoSeq(process,
                        era='2016-Legacy')  
 #a sequence egammaPostRecoSeq has now been created and should be added to your path, eg process.p=cms.Path(process.egammaPostRecoSeq)
 
-process.p = cms.Path(process.ntuple*process.egammaPostRecoSeq)
+process.p = cms.Path(process.prefiringweight*process.egammaPostRecoSeq*process.ntuple)
 process.p.associate(process.patAlgosToolsTask)
 
 #-- Local test --#
