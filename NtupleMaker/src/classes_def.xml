@@ -11,6 +11,8 @@
     <class name="std::vector<Ntuple::Jet>" />
     <class name="Ntuple::MET" />
     <class name="std::vector<Ntuple::MET>" />
+    <class name="Ntuple::Event" />
+    <class name="std::vector<Ntuple::Event>" />    
     <class name="Ntuple::TriggerResult" />
     <class name="std::vector<Ntuple::TriggerResult>" />
     <class name="Ntuple::TriggerObject" />

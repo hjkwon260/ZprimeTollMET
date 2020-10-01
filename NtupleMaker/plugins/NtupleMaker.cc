@@ -83,6 +83,7 @@
 #include "ZprimeTollMET/NtupleMaker/interface/Electron.h"
 #include "ZprimeTollMET/NtupleMaker/interface/Jet.h"
 #include "ZprimeTollMET/NtupleMaker/interface/MET.h"
+#include "ZprimeTollMET/NtupleMaker/interface/Event.h"
 
 #include "TTree.h"
 #include <vector>
@@ -109,6 +110,7 @@ class NtupleMaker : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
       virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
       virtual void endJob() override;
 
+      virtual void fillEvent(const edm::Event& iEvent, bool isMC);
       virtual void fillTriggers(const edm::Event& iEvent);
       virtual void fillGenParticles(const edm::Event& iEvent);
       virtual void fillMuons(const edm::Event& iEvent);
@@ -121,9 +123,10 @@ class NtupleMaker : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
       bool isMC;
 
+      edm::EDGetTokenT<std::vector<PileupSummaryInfo>> t_pu;
       edm::EDGetTokenT<edm::TriggerResults> t_trigresult;
       edm::EDGetTokenT<edm::TriggerResults> t_trigresultPAT;
-      edm::EDGetTokenT<std::vector<pat::TriggerObjectStandAlone>> t_trigobject; 
+      // edm::EDGetTokenT<std::vector<pat::TriggerObjectStandAlone>> t_trigobject; 
       edm::EDGetTokenT<double> t_prefweight;
       edm::EDGetTokenT<double> t_prefweightup;
       edm::EDGetTokenT<double> t_prefweightdown;     
@@ -135,22 +138,25 @@ class NtupleMaker : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
       edm::EDGetTokenT<std::vector<pat::Jet>> t_jet;
       // edm::EDGetTokenT<std::vector<pat::Jet>> t_DeepFlavour;
       edm::EDGetTokenT<std::vector<pat::MET>> t_MET;
+      edm::EDGetTokenT<std::vector<pat::MET>> t_puppiMET;
+      edm::EDGetTokenT<std::vector<pat::MET>> t_deepMET;
       
-      edm::Handle<std::vector<reco::Vertex>> h_pv;
+      // edm::Handle<std::vector<reco::Vertex>> h_pv;
 
       TTree *ntuple_;
-      reco::Vertex pv;
+      // reco::Vertex pv;
+      Ntuple::EventInfo eventinfo_;
       Ntuple::TrigRes trigresults_;
-      Ntuple::TrigObj trigobjects_;
+      // Ntuple::TrigObj trigobjects_;
       Ntuple::GenParticleCollection genparticles_;
       Ntuple::MuonCollection muons_;
       Ntuple::ElectronCollection electrons_;
       Ntuple::JetCollection jets_;
       Ntuple::METevt metevt_;
 
-      double prefiringweight_ = 0;
-      double prefiringweightup_ = 0;
-      double prefiringweightdown_ = 0;
+      // double prefiringweight_ = 0;
+      // double prefiringweightup_ = 0;
+      // double prefiringweightdown_ = 0;
       int ngenparticles_ = 0;
       float genweight_ = 1;
       int nmuons_ = 0;
@@ -171,9 +177,10 @@ class NtupleMaker : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 //
 NtupleMaker::NtupleMaker(const edm::ParameterSet& iConfig):
 isMC(iConfig.getParameter<bool>("isMC")),
+t_pu                (consumes<std::vector< PileupSummaryInfo >>          (iConfig.getUntrackedParameter<edm::InputTag>("pileupsummary"))),
 t_trigresult        (consumes<edm::TriggerResults>                       (iConfig.getUntrackedParameter<edm::InputTag>("triggerresults"))),
 t_trigresultPAT     (consumes<edm::TriggerResults>                       (iConfig.getUntrackedParameter<edm::InputTag>("triggerresultsPAT"))),
-t_trigobject        (consumes<std::vector<pat::TriggerObjectStandAlone>> (iConfig.getUntrackedParameter<edm::InputTag>("triggerobjects"))),
+// t_trigobject        (consumes<std::vector<pat::TriggerObjectStandAlone>> (iConfig.getUntrackedParameter<edm::InputTag>("triggerobjects"))),
 t_prefweight        (consumes<double>                                    (iConfig.getUntrackedParameter<edm::InputTag>("prefiringweight"))),
 t_prefweightup      (consumes<double>                                    (iConfig.getUntrackedParameter<edm::InputTag>("prefiringweightUp"))),
 t_prefweightdown    (consumes<double>                                    (iConfig.getUntrackedParameter<edm::InputTag>("prefiringweightDown"))),
@@ -183,7 +190,9 @@ t_genevtinfo        (consumes<GenEventInfoProduct>                       (iConfi
 t_muon              (consumes<std::vector<pat::Muon>>                    (iConfig.getUntrackedParameter<edm::InputTag>("muons"))),
 t_electron          (consumes<std::vector<pat::Electron>>                (iConfig.getUntrackedParameter<edm::InputTag>("electrons"))),
 t_jet               (consumes<std::vector<pat::Jet>>                     (iConfig.getUntrackedParameter<edm::InputTag>("jets"))),
-t_MET               (consumes<std::vector<pat::MET>>                     (iConfig.getUntrackedParameter<edm::InputTag>("MET")))
+t_MET               (consumes<std::vector<pat::MET>>                     (iConfig.getUntrackedParameter<edm::InputTag>("MET"))),
+t_puppiMET          (consumes<std::vector<pat::MET>>                     (iConfig.getUntrackedParameter<edm::InputTag>("puppiMET"))),
+t_deepMET           (consumes<std::vector<pat::MET>>                     (iConfig.getUntrackedParameter<edm::InputTag>("deepMET")))
 
 {}
 
@@ -205,11 +214,12 @@ NtupleMaker::~NtupleMaker()
 void NtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 
-  iEvent.getByToken(t_pv, h_pv);
-  pv = h_pv->front();
+  // iEvent.getByToken(t_pv, h_pv);
+  // pv = h_pv->front();
 
+  eventinfo_.clear();
   trigresults_.clear();
-  trigobjects_.clear();
+  // trigobjects_.clear();
   genparticles_.clear();
   muons_.clear();
   electrons_.clear();
@@ -217,6 +227,7 @@ void NtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   metevt_.clear();
   // event_.genparticles_.clear();
 
+  fillEvent(iEvent, isMC);
   fillTriggers(iEvent);
   if(isMC) fillGenParticles(iEvent);
   fillMuons(iEvent);
@@ -235,11 +246,12 @@ void NtupleMaker::beginJob()
   edm::Service<TFileService> fs;
   ntuple_ = fs->make<TTree>("ntuple","ntuple");  
 
+  ntuple_->Branch("eventinfo" ,&eventinfo_);
   ntuple_->Branch("trigresults" ,&trigresults_);
-  ntuple_->Branch("trigobjects" ,&trigobjects_);
-  ntuple_->Branch("prefiringweight" ,&prefiringweight_, "prefiringweight/D");
-  ntuple_->Branch("prefiringweightup" ,&prefiringweightup_, "prefiringweightup/D");
-  ntuple_->Branch("prefiringweightdown" ,&prefiringweightdown_, "prefiringweightdown/D");
+  // ntuple_->Branch("trigobjects" ,&trigobjects_);
+  // ntuple_->Branch("prefiringweight" ,&prefiringweight_, "prefiringweight/D");
+  // ntuple_->Branch("prefiringweightup" ,&prefiringweightup_, "prefiringweightup/D");
+  // ntuple_->Branch("prefiringweightdown" ,&prefiringweightdown_, "prefiringweightdown/D");
   ntuple_->Branch("ngenparticles" ,&ngenparticles_, "ngenparticles/I");
   ntuple_->Branch("genweight" ,&genweight_, "genweight/F");
   ntuple_->Branch("genparticles" ,&genparticles_);
@@ -267,18 +279,60 @@ NtupleMaker::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   descriptions.addDefault(desc);
 }
 
+void NtupleMaker::fillEvent(const edm::Event &iEvent, bool isMC) {
+
+  Ntuple::Event evt_;
+
+  edm::Handle<std::vector<reco::Vertex>> h_pv;
+  iEvent.getByToken(t_pv, h_pv);
+
+  evt_.nvertices = h_pv->size();
+
+  if(isMC){
+    edm::Handle<std::vector<PileupSummaryInfo>>  h_pu;
+    iEvent.getByToken(t_pu, h_pu);
+
+    for(std::vector<PileupSummaryInfo>::const_iterator pu = h_pu->begin(); pu != h_pu->end(); ++pu)
+    {
+      int BX = pu->getBunchCrossing();
+
+      if( BX == 0 )
+      {
+        // npvin = PVI->getPU_NumInteractions(); // in time only
+        evt_.npileup = pu->getTrueNumInteractions(); // in and out of time
+        continue;
+      }
+    }
+  }  
+
+  edm::Handle<double> h_prefweight;
+  iEvent.getByToken(t_prefweight, h_prefweight);
+  evt_.prefiringweight = (*h_prefweight);
+
+  edm::Handle<double> h_prefweightup;
+  iEvent.getByToken(t_prefweightup, h_prefweightup);
+  evt_.prefiringweightup = (*h_prefweightup);
+
+  edm::Handle<double> h_prefweightdown;
+  iEvent.getByToken(t_prefweightdown, h_prefweightdown);
+  evt_.prefiringweightdown = (*h_prefweightdown);
+
+  eventinfo_.push_back(evt_);
+  
+}
+
 void NtupleMaker::fillTriggers(const edm::Event &iEvent) {
 
     Ntuple::TriggerResult trigres_;
-    Ntuple::TriggerObject trigobj_;
+    // Ntuple::TriggerObject trigobj_;
 
     edm::Handle< edm::TriggerResults > h_trigresults;
     edm::Handle< edm::TriggerResults > h_trigresultsPAT;
     iEvent.getByToken(t_trigresult,h_trigresults);
     if(isMC) iEvent.getByToken(t_trigresultPAT,h_trigresultsPAT);
 
-    edm::Handle<std::vector<pat::TriggerObjectStandAlone>> h_trigobjects;
-    iEvent.getByToken(t_trigobject, h_trigobjects);
+    // edm::Handle<std::vector<pat::TriggerObjectStandAlone>> h_trigobjects;
+    // iEvent.getByToken(t_trigobject, h_trigobjects);
 
     string trigs[] = {
         // "HLT_IsoMu17_eta2p1_v*",
@@ -337,35 +391,23 @@ void NtupleMaker::fillTriggers(const edm::Event &iEvent) {
         }
     }
 
-    for(unsigned i=0; i<h_trigobjects->size(); i++) {
+    // for(unsigned i=0; i<h_trigobjects->size(); i++) {
 
-        pat::TriggerObjectStandAlone trigobj = h_trigobjects->at(i);
-        trigobj.unpackPathNames(triglist);
-        const std::vector< std::string > pathnames = trigobj.pathNames();
+    //     pat::TriggerObjectStandAlone trigobj = h_trigobjects->at(i);
+    //     trigobj.unpackPathNames(triglist);
+    //     const std::vector< std::string > pathnames = trigobj.pathNames();
 
-        for(std::vector<std::string>::const_iterator name = pathnames.begin(); name != pathnames.end(); ++name){
-            for(unsigned int j=0; j<ntrigs; j++) {
-                if( name->find(trigs[j].substr(0,trigs[j].find("*"))) != std::string::npos && trigobj.hasPathName(*name,true,true) ) {
-                    trigobj_.eta = trigobj.eta();
-                    trigobj_.phi = trigobj.phi();
-                    trigobj_.name = *name;
-                    trigobjects_.push_back(trigobj_);
-                }
-            }
-        }
-    }
-
-    edm::Handle<double> h_prefweight;
-    iEvent.getByToken(t_prefweight, h_prefweight);
-    prefiringweight_ = (*h_prefweight);
-
-    edm::Handle<double> h_prefweightup;
-    iEvent.getByToken(t_prefweightup, h_prefweightup);
-    prefiringweightup_ = (*h_prefweightup);
-
-    edm::Handle<double> h_prefweightdown;
-    iEvent.getByToken(t_prefweightdown, h_prefweightdown);
-    prefiringweightdown_ = (*h_prefweightdown);
+    //     for(std::vector<std::string>::const_iterator name = pathnames.begin(); name != pathnames.end(); ++name){
+    //         for(unsigned int j=0; j<ntrigs; j++) {
+    //             if( name->find(trigs[j].substr(0,trigs[j].find("*"))) != std::string::npos && trigobj.hasPathName(*name,true,true) ) {
+    //                 trigobj_.eta = trigobj.eta();
+    //                 trigobj_.phi = trigobj.phi();
+    //                 trigobj_.name = *name;
+    //                 trigobjects_.push_back(trigobj_);
+    //             }
+    //         }
+    //     }
+    // }
 
 }
 
@@ -431,6 +473,11 @@ void NtupleMaker::fillGenParticles(const edm::Event& iEvent) {
 void NtupleMaker::fillMuons(const edm::Event& iEvent) {
 
     Ntuple::Muon mu_;
+
+    edm::Handle<std::vector<reco::Vertex>> h_pv;
+    iEvent.getByToken(t_pv, h_pv);
+
+    reco::Vertex pv = h_pv->front();
 
     edm::Handle<std::vector<pat::Muon>> h_muons;
     iEvent.getByToken(t_muon,h_muons);
@@ -736,6 +783,24 @@ void NtupleMaker::fillMET(const edm::Event& iEvent) {
     met_.px    = met->front().px();
     met_.py    = met->front().py();
     met_.sumEt = met->front().sumEt();
+
+    edm::Handle<std::vector<pat::MET>> puppimet;
+    iEvent.getByToken(t_puppiMET,puppimet);
+
+    met_.puppi_pt    = puppimet->front().pt();
+    met_.puppi_phi   = puppimet->front().phi();
+    met_.puppi_px    = puppimet->front().px();
+    met_.puppi_py    = puppimet->front().py();
+    met_.puppi_sumEt = puppimet->front().sumEt();
+
+    edm::Handle<std::vector<pat::MET>> deepmet;
+    iEvent.getByToken(t_deepMET,deepmet);
+
+    met_.deep_pt    = deepmet->front().pt();
+    met_.deep_phi   = deepmet->front().phi();
+    met_.deep_px    = deepmet->front().px();
+    met_.deep_py    = deepmet->front().py();
+    met_.deep_sumEt = deepmet->front().sumEt();
 
     metevt_.push_back(met_);
 

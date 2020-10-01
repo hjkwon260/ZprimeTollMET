@@ -4,3 +4,4 @@
 #include "ZprimeTollMET/NtupleMaker/interface/Jet.h"
 #include "ZprimeTollMET/NtupleMaker/interface/MET.h"
 #include "ZprimeTollMET/NtupleMaker/interface/Trigger.h"
+#include "ZprimeTollMET/NtupleMaker/interface/Event.h"

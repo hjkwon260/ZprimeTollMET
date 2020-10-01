@@ -31,9 +31,10 @@ process.source = cms.Source("PoolSource",
 
 process.ntuple = cms.EDAnalyzer('NtupleMaker',
   isMC = cms.bool(bool(options.isMC)),
+  pileupsummary = cms.untracked.InputTag("slimmedAddPileupInfo"),
   triggerresults = cms.untracked.InputTag("TriggerResults", "", "HLT"), # only hlt
   triggerresultsPAT = cms.untracked.InputTag("TriggerResults", "", "PAT"), # only PAT
-  triggerobjects = cms.untracked.InputTag("slimmedPatTrigger"),
+  # triggerobjects = cms.untracked.InputTag("slimmedPatTrigger"), # comment out, no susy
   # triggerobjects = cms.untracked.InputTag("selectedPatTrigger"), # for signal MC
   # triggerresultsPAT = cms.untracked.InputTag("TriggerResults", "", "PAT"),
   prefiringweight = cms.untracked.InputTag("prefiringweight:nonPrefiringProb"),
@@ -47,7 +48,9 @@ process.ntuple = cms.EDAnalyzer('NtupleMaker',
   # jets = cms.untracked.InputTag("slimmedJets"),
   jets = cms.untracked.InputTag("selectedUpdatedPatJetsNewDFTraining"),
   # DeepFlavour = cms.untracked.InputTag("selectedUpdatedPatJetsNewDFTraining"),
-  MET = cms.untracked.InputTag("slimmedMETs")
+  MET = cms.untracked.InputTag("slimmedMETs"),
+  puppiMET = cms.untracked.InputTag("slimmedMETsPuppi"),
+  deepMET = cms.untracked.InputTag("deepMETProducer")
 )
 
 process.TFileService = cms.Service("TFileService",
@@ -102,13 +105,27 @@ setupEgammaPostRecoSeq(process,
                        era='2016-Legacy')  
 #a sequence egammaPostRecoSeq has now been created and should be added to your path, eg process.p=cms.Path(process.egammaPostRecoSeq)
 
-process.p = cms.Path(process.prefiringweight*process.egammaPostRecoSeq*process.ntuple)
+# -- Deep MET --#
+from RecoMET.METPUSubtraction.deepMETProducer_cfi import deepMETProducer
+process.deepMETProducer = deepMETProducer.clone()
+process.sequence = cms.Sequence(process.deepMETProducer)
+
+process.p = cms.Path(process.prefiringweight*process.egammaPostRecoSeq*process.sequence*process.ntuple)
+# process.p = cms.Path(process.prefiringweight*process.egammaPostRecoSeq*process.sequence)
 process.p.associate(process.patAlgosToolsTask)
 
 #-- Local test --#
 if options.isMC==1:
     # process.source.fileNames = cms.untracked.vstring('/store/mc/RunIISummer16MiniAODv3/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/MINIAODSIM/PUMoriond17_94X_mcRun2_asymptotic_v3-v1/00000/D6B5847A-10C5-E811-9B22-A4BF0108B062.root')
-    process.source.fileNames = cms.untracked.vstring('/store/mc/RunIISummer16MiniAODv3/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/PUMoriond17_94X_mcRun2_asymptotic_v3_ext2-v1/270000/FEFC23FC-37C7-E811-97DA-0CC47AA53D86.root')
+    # process.source.fileNames = cms.untracked.vstring('/store/mc/RunIISummer16MiniAODv3/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/PUMoriond17_94X_mcRun2_asymptotic_v3_ext2-v1/270000/FEFC23FC-37C7-E811-97DA-0CC47AA53D86.root')
+    process.source.fileNames = cms.untracked.vstring('file:FCE4D694-BDD2-E911-BB3F-0CC47A78A340.root')
+    # process.source.fileNames = cms.untracked.vstring(
+    #   'file:Zprime_reMiniaod94X_2p5_PU_mu_1.root',
+    #   'file:Zprime_reMiniaod94X_2p5_PU_mu_2.root',
+    #   'file:Zprime_reMiniaod94X_2p5_PU_mu_3.root',
+    #   'file:Zprime_reMiniaod94X_2p5_PU_mu_4.root',
+      
+    #   )
 else:
     process.source.fileNames = cms.untracked.vstring('/store/data/Run2016B/SingleMuon/MINIAOD/17Jul2018_ver1-v1/80000/F2494388-1D8C-E811-BB8E-0242AC1C0502.root')
 
