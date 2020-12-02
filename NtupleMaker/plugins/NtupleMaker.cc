@@ -346,7 +346,9 @@ void NtupleMaker::fillTriggers(const edm::Event &iEvent) {
     // "HLT_DoubleEle37_Ele27_CaloIdL_GsfTrkIdVL_v*",
         "HLT_Mu50_v*",
     "HLT_TkMu50_v*",
-    // "HLT_Ele27_WPTight_Gsf_v*",
+    "HLT_Ele27_WPTight_Gsf_v*",
+    "HLT_Ele32_WPTight_Gsf_v*",
+    "HLT_Ele32_WPMedium_Gsf_v*",
     //     "HLT_Mu45_eta2p1_v*",       
     //     "HLT_Mu17_TrkIsoVVL_v*",
     //     "HLT_DoubleIsoMu17_eta2p1_v*",                
@@ -716,6 +718,15 @@ void NtupleMaker::fillElectrons(const edm::Event& iEvent) {
         el_.phi              = el->phi();
         el_.energy           = el->energy();
         el_.charge           = el->charge();
+        // auto corrP4  = pat::Electron::p4() * pat::Electron::userFloat("ecalTrkEnergyPostCorr") / pat::Electron::energy();
+        auto corrp4 = el->p4()*el->userFloat("ecalTrkEnergyPostCorr")/el->energy();
+        el_.corrpx           = corrp4.px();
+        el_.corrpy           = corrp4.py();
+        el_.corrpz           = corrp4.pz();
+        el_.corrpt           = corrp4.pt();
+        el_.correta          = corrp4.eta();
+        el_.corrphi          = corrp4.phi();
+        el_.correnergy       = corrp4.energy();       
 
         // Isolation
         el_.pfchHadIso  = el->pfIsolationVariables().sumChargedHadronPt;
