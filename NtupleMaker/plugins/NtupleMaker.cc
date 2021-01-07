@@ -517,6 +517,7 @@ void NtupleMaker::fillMuons(const edm::Event& iEvent) {
         mu_.nChambers        = mu->numberOfChambers();
         mu_.stationMask      = mu->stationMask();
         mu_.nMatchedStations = mu->numberOfMatchedStations();
+        if( mu->innerTrack().isNonnull() ) mu_.nTkLayers  = mu->innerTrack()->hitPattern().trackerLayersWithMeasurement();
         mu_.isNewHighPtMuon = isNewHighPtMuon( (*mu), pv );
 
         // if( mu->isGlobalMuon() ) { // Global Muon
@@ -710,23 +711,23 @@ void NtupleMaker::fillElectrons(const edm::Event& iEvent) {
         el_.MVAwp80noiso     = el->electronID("mvaEleID-Fall17-noIso-V2-wp80");
         el_.MVAwp90iso       = el->electronID("mvaEleID-Fall17-iso-V2-wp90");
         el_.MVAwp90noiso     = el->electronID("mvaEleID-Fall17-noIso-V2-wp90");
-        el_.px               = el->px();
-        el_.py               = el->py();
-        el_.pz               = el->pz();
-        el_.pt               = el->pt();
-        el_.eta              = el->eta();
-        el_.phi              = el->phi();
-        el_.energy           = el->energy();
+        el_.uncorrpx               = el->px();
+        el_.uncorrpy               = el->py();
+        el_.uncorrpz               = el->pz();
+        el_.uncorrpt               = el->pt();
+        el_.uncorreta              = el->eta();
+        el_.uncorrphi              = el->phi();
+        el_.uncorrenergy           = el->energy();
         el_.charge           = el->charge();
         // auto corrP4  = pat::Electron::p4() * pat::Electron::userFloat("ecalTrkEnergyPostCorr") / pat::Electron::energy();
         auto corrp4 = el->p4()*el->userFloat("ecalTrkEnergyPostCorr")/el->energy();
-        el_.corrpx           = corrp4.px();
-        el_.corrpy           = corrp4.py();
-        el_.corrpz           = corrp4.pz();
-        el_.corrpt           = corrp4.pt();
-        el_.correta          = corrp4.eta();
-        el_.corrphi          = corrp4.phi();
-        el_.correnergy       = corrp4.energy();       
+        el_.px           = corrp4.px();
+        el_.py           = corrp4.py();
+        el_.pz           = corrp4.pz();
+        el_.pt           = corrp4.pt();
+        el_.eta          = corrp4.eta();
+        el_.phi          = corrp4.phi();
+        el_.energy       = corrp4.energy();       
 
         // Isolation
         el_.pfchHadIso  = el->pfIsolationVariables().sumChargedHadronPt;

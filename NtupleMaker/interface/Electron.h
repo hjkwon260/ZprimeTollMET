@@ -12,7 +12,7 @@ namespace Ntuple
       CutBasedIdVeto(false), CutBasedIdLoose(false), CutBasedIdMedium(false), CutBasedIdTight(false),
       MVAwp80iso(false), MVAwp80noiso(false), MVAwp90iso(false), MVAwp90noiso(false),
       pt(0), px(0), py(0), pz(0), eta(0), phi(0), energy(0), 
-      corrpt(0), corrpx(0), corrpy(0), corrpz(0), correta(0), corrphi(0), correnergy(0), 
+      uncorrpt(0), uncorrpx(0), uncorrpy(0), uncorrpz(0), uncorreta(0), uncorrphi(0), uncorrenergy(0), 
       charge(0),
       pfchHadIso(-1), pfneuHadIso(-1), pfgammaIso(-1), pfpuIso(-1), pfrelIso(-1)
 
@@ -22,7 +22,7 @@ namespace Ntuple
       bool           CutBasedIdVeto, CutBasedIdLoose, CutBasedIdMedium, CutBasedIdTight;
       bool           MVAwp80iso, MVAwp80noiso, MVAwp90iso, MVAwp90noiso;
       float          pt, px, py, pz, eta, phi, energy;
-      float          corrpt, corrpx, corrpy, corrpz, correta, corrphi, correnergy;
+      float          uncorrpt, uncorrpx, uncorrpy, uncorrpz, uncorreta, uncorrphi, uncorrenergy;
       int            charge;       
       float          pfchHadIso, pfneuHadIso, pfgammaIso, pfpuIso, pfrelIso;    // detector isolation (R=0.3)
           

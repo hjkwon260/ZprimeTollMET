@@ -14,6 +14,7 @@ namespace Ntuple
       pt(0), px(0), py(0), pz(0), eta(0), phi(0),
       charge(0), nChambers(0), stationMask(0), nMatchedStations(0),
       // normalizedChi2, nValidHits, nValidTrackerHits, nValidPixelHits, nTrackerLayers, qoverp, theta, 
+      nTkLayers(0),
       // staPt(0), staEta(0), staPhi(0),
       // pfPt(0), pfEta(0), pfPhi(0),
       trackIso(-1), ecalIso(-1), hcalIso(-1),
@@ -47,6 +48,7 @@ namespace Ntuple
       int            charge, nChambers, stationMask, nMatchedStations;       
       // float          staPt, staEta, staPhi;                 // STA track kinematics
       // float          pfPt, pfEta, pfPhi;                    // matched PFCandidate
+      unsigned int   nTkLayers;                                // number of hit layers in tracker
       float          trackIso, ecalIso, hcalIso;              // detector isolation (R=0.3)
       float          pfchHadIso, pfneuHadIso, pfgammaIso, pfpuIso;  // PF isolation variables (R=0.4)
       // float          chHadIso03, gammaIso03, neuHadIso03, puIso03;  // PF isolation variables (R=0.3)
