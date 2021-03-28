@@ -125,6 +125,7 @@ class NtupleMaker : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
       edm::EDGetTokenT<std::vector<PileupSummaryInfo>> t_pu;
       edm::EDGetTokenT<edm::TriggerResults> t_trigresult;
+      edm::EDGetTokenT<edm::TriggerResults> t_trigresultRECO;
       edm::EDGetTokenT<edm::TriggerResults> t_trigresultPAT;
       // edm::EDGetTokenT<std::vector<pat::TriggerObjectStandAlone>> t_trigobject; 
       edm::EDGetTokenT<double> t_prefweight;
@@ -179,6 +180,7 @@ NtupleMaker::NtupleMaker(const edm::ParameterSet& iConfig):
 isMC(iConfig.getParameter<bool>("isMC")),
 t_pu                (consumes<std::vector< PileupSummaryInfo >>          (iConfig.getUntrackedParameter<edm::InputTag>("pileupsummary"))),
 t_trigresult        (consumes<edm::TriggerResults>                       (iConfig.getUntrackedParameter<edm::InputTag>("triggerresults"))),
+t_trigresultRECO     (consumes<edm::TriggerResults>                      (iConfig.getUntrackedParameter<edm::InputTag>("triggerresultsRECO"))),
 t_trigresultPAT     (consumes<edm::TriggerResults>                       (iConfig.getUntrackedParameter<edm::InputTag>("triggerresultsPAT"))),
 // t_trigobject        (consumes<std::vector<pat::TriggerObjectStandAlone>> (iConfig.getUntrackedParameter<edm::InputTag>("triggerobjects"))),
 t_prefweight        (consumes<double>                                    (iConfig.getUntrackedParameter<edm::InputTag>("prefiringweight"))),
@@ -283,6 +285,10 @@ void NtupleMaker::fillEvent(const edm::Event &iEvent, bool isMC) {
 
   Ntuple::Event evt_;
 
+  evt_.runNum       = iEvent.id().run();
+  evt_.lumi = iEvent.id().luminosityBlock();
+  evt_.eventNum     = iEvent.id().event();
+
   edm::Handle<std::vector<reco::Vertex>> h_pv;
   iEvent.getByToken(t_pv, h_pv);
 
@@ -329,7 +335,9 @@ void NtupleMaker::fillTriggers(const edm::Event &iEvent) {
     edm::Handle< edm::TriggerResults > h_trigresults;
     edm::Handle< edm::TriggerResults > h_trigresultsPAT;
     iEvent.getByToken(t_trigresult,h_trigresults);
-    if(isMC) iEvent.getByToken(t_trigresultPAT,h_trigresultsPAT);
+    // if(isMC) iEvent.getByToken(t_trigresultPAT,h_trigresultsPAT);
+    iEvent.getByToken(t_trigresultPAT,h_trigresultsPAT);
+    if(!(h_trigresultsPAT.isValid())) iEvent.getByToken(t_trigresultRECO,h_trigresultsPAT);
 
     // edm::Handle<std::vector<pat::TriggerObjectStandAlone>> h_trigobjects;
     // iEvent.getByToken(t_trigobject, h_trigobjects);
@@ -370,18 +378,22 @@ void NtupleMaker::fillTriggers(const edm::Event &iEvent) {
 
     edm::TriggerNames triglist = iEvent.triggerNames(*h_trigresults);
 
+    // cout << h_trigresultsPAT.product()->size( << endl;
+
     //test filter
-    if(isMC){
+    // if(isMC){
     edm::TriggerNames triglistPAT = iEvent.triggerNames(*h_trigresultsPAT);
     trigres_.Flag_goodVertices = h_trigresultsPAT.product()->accept(triglistPAT.triggerIndex("Flag_goodVertices"));    
     trigres_.Flag_globalSuperTightHalo2016Filter = h_trigresultsPAT.product()->accept(triglistPAT.triggerIndex("Flag_globalSuperTightHalo2016Filter"));    
     trigres_.Flag_HBHENoiseFilter = h_trigresultsPAT.product()->accept(triglistPAT.triggerIndex("Flag_HBHENoiseFilter"));    
     trigres_.Flag_HBHENoiseIsoFilter = h_trigresultsPAT.product()->accept(triglistPAT.triggerIndex("Flag_HBHENoiseIsoFilter"));    
     trigres_.Flag_EcalDeadCellTriggerPrimitiveFilter = h_trigresultsPAT.product()->accept(triglistPAT.triggerIndex("Flag_EcalDeadCellTriggerPrimitiveFilter"));  
-    }  
+    // }  
 
     for( unsigned i = 0; i != ntrigres; i++ ) {
         std::string _trigname = triglist.triggerName(i);
+
+        // cout << _trigname << endl;
 
         for( unsigned j = 0; j != ntrigs; j++ ) {
             if( _trigname.find(trigs[j].substr(0,trigs[j].find("*"))) != std::string::npos ) {
