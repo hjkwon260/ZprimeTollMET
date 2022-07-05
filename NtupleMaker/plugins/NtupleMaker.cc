@@ -234,8 +234,8 @@ void NtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   if(isMC) fillGenParticles(iEvent);
   fillMuons(iEvent);
   fillElectrons(iEvent);
-  fillJet(iEvent);
-  fillMET(iEvent);
+  // fillJet(iEvent);
+  // fillMET(iEvent);
   ntuple_->Fill();
  
   // ntuple_->Branch("genparticles" ,&event_.genparticles_);

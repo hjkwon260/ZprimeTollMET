@@ -24,7 +24,8 @@ process.source = cms.Source("PoolSource",
         # 'file:/u/user/hjkwon/testKW/CMSSW_9_4_13/src/ZprimeTollMET/NtupleMaker/python/94XMC/8C092947-1022-E911-8002-6CC2173DC2E0.root'
         # 'file:/u/user/hjkwon/SE_UserHome/CRAB_UserFiles/crab_MINIAOD_BMII_2p5_mu_PU/191205_151624/0000/ZpBSM_pythia8_MiniAOD_10.root'
         # 'file:/u/user/hjkwon/testKW/CMSSW_10_2_0/src/ZprimeTollMET/NtupleMaker/test/F864DF5E-948B-E811-9770-A4BF01025B08.root'
-        '/store/mc/RunIISummer16MiniAODv3/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/MINIAODSIM/PUMoriond17_94X_mcRun2_asymptotic_v3-v1/00000/D6B5847A-10C5-E811-9B22-A4BF0108B062.root'
+        # '/store/mc/RunIISummer16MiniAODv3/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/MINIAODSIM/PUMoriond17_94X_mcRun2_asymptotic_v3-v1/00000/D6B5847A-10C5-E811-9B22-A4BF0108B062.root'
+      '/store/mc/RunIISummer20UL16MiniAODAPVv2/DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v1/70000/2EE3B436-E445-A440-A629-89CE2962EC9B.root'
     )
 )
 
@@ -67,7 +68,7 @@ process.load("Configuration.StandardSequences.MagneticField_cff")
 # -- Global Tags -- #
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff")
 if options.isMC==1:
-    process.GlobalTag.globaltag = cms.string("102X_mcRun2_asymptotic_v7")
+    process.GlobalTag.globaltag = cms.string("106X_mcRun2_asymptotic_preVFP_v11")
 else:
     process.GlobalTag.globaltag = cms.string("102X_dataRun2_v12")
 
@@ -79,46 +80,47 @@ process.prefiringweight = l1ECALPrefiringWeightProducer.clone(
     PrefiringRateSystematicUncty = cms.double(0.2),
     SkipWarnings = False)
 
-#-- Deep flavor rerun --#
-from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
+# #-- Deep flavor rerun --#
+# from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
 
-updateJetCollection(
-   process,
-   jetSource = cms.InputTag('slimmedJets'),
-   pvSource = cms.InputTag('offlineSlimmedPrimaryVertices'),
-   svSource = cms.InputTag('slimmedSecondaryVertices'),
-   jetCorrections = ('AK4PFchs', cms.vstring(['L1FastJet', 'L2Relative', 'L3Absolute']), 'None'),
-   btagDiscriminators = [
-      'pfDeepFlavourJetTags:probb',
-      'pfDeepFlavourJetTags:probbb',
-      'pfDeepFlavourJetTags:problepb',
-      'pfDeepFlavourJetTags:probc',
-      'pfDeepFlavourJetTags:probuds',
-      'pfDeepFlavourJetTags:probg'
-      ],
-   postfix='NewDFTraining'
-)
+# updateJetCollection(
+#    process,
+#    jetSource = cms.InputTag('slimmedJets'),
+#    pvSource = cms.InputTag('offlineSlimmedPrimaryVertices'),
+#    svSource = cms.InputTag('slimmedSecondaryVertices'),
+#    jetCorrections = ('AK4PFchs', cms.vstring(['L1FastJet', 'L2Relative', 'L3Absolute']), 'None'),
+#    btagDiscriminators = [
+#       'pfDeepFlavourJetTags:probb',
+#       'pfDeepFlavourJetTags:probbb',
+#       'pfDeepFlavourJetTags:problepb',
+#       'pfDeepFlavourJetTags:probc',
+#       'pfDeepFlavourJetTags:probuds',
+#       'pfDeepFlavourJetTags:probg'
+#       ],
+#    postfix='NewDFTraining'
+# )
 
-#-- electron --##
-from RecoEgamma.EgammaTools.EgammaPostRecoTools import setupEgammaPostRecoSeq
-setupEgammaPostRecoSeq(process,
-                       runEnergyCorrections=False, #corrections by default are fine so no need to re-run
-                       era='2016-Legacy')  
-#a sequence egammaPostRecoSeq has now been created and should be added to your path, eg process.p=cms.Path(process.egammaPostRecoSeq)
+# #-- electron --##
+# from RecoEgamma.EgammaTools.EgammaPostRecoTools import setupEgammaPostRecoSeq
+# setupEgammaPostRecoSeq(process,
+#                        runEnergyCorrections=False, #corrections by default are fine so no need to re-run
+#                        era='2016-Legacy')  
+# #a sequence egammaPostRecoSeq has now been created and should be added to your path, eg process.p=cms.Path(process.egammaPostRecoSeq)
 
-# -- Deep MET --#
-from RecoMET.METPUSubtraction.deepMETProducer_cfi import deepMETProducer
-process.deepMETProducer = deepMETProducer.clone()
-process.sequence = cms.Sequence(process.deepMETProducer)
+# # -- Deep MET --#
+# from RecoMET.METPUSubtraction.deepMETProducer_cfi import deepMETProducer
+# process.deepMETProducer = deepMETProducer.clone()
+# process.sequence = cms.Sequence(process.deepMETProducer)
 
-process.p = cms.Path(process.prefiringweight*process.egammaPostRecoSeq*process.sequence*process.ntuple)
+# process.p = cms.Path(process.prefiringweight*process.egammaPostRecoSeq*process.sequence*process.ntuple)
+process.p = cms.Path(process.prefiringweight*process.ntuple)
 # process.p = cms.Path(process.prefiringweight*process.egammaPostRecoSeq*process.sequence)
-process.p.associate(process.patAlgosToolsTask)
+# process.p.associate(process.patAlgosToolsTask)
 
 #-- Local test --#
 if options.isMC==1:
     # process.source.fileNames = cms.untracked.vstring('/store/mc/RunIISummer16MiniAODv3/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/MINIAODSIM/PUMoriond17_94X_mcRun2_asymptotic_v3-v1/00000/D6B5847A-10C5-E811-9B22-A4BF0108B062.root')
-    process.source.fileNames = cms.untracked.vstring('/store/mc/RunIISummer16MiniAODv3/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/PUMoriond17_94X_mcRun2_asymptotic_v3_ext2-v1/270000/FEFC23FC-37C7-E811-97DA-0CC47AA53D86.root')
+    process.source.fileNames = cms.untracked.vstring('/store/mc/RunIISummer20UL16MiniAODAPVv2/DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v1/70000/2EE3B436-E445-A440-A629-89CE2962EC9B.root')
     # process.source.fileNames = cms.untracked.vstring('file:FCE4D694-BDD2-E911-BB3F-0CC47A78A340.root')
     # process.source.fileNames = cms.untracked.vstring(
     #   'file:Zprime_reMiniaod94X_2p5_PU_mu_1.root',
