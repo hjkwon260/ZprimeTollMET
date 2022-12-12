@@ -22,8 +22,10 @@
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/one/EDAnalyzer.h"
+// #include "FWCore/Framework/interface/one/EDAnalyzer.h"
+#include "FWCore/Framework/interface/EDAnalyzer.h"
 #include "FWCore/Framework/interface/Event.h"
+#include "FWCore/Framework/interface/Run.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
@@ -97,7 +99,8 @@ using namespace edm;
 //
 
 
-class NtupleMaker : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
+// class NtupleMaker : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
+class NtupleMaker : public edm::EDAnalyzer{
    public:
       explicit NtupleMaker(const edm::ParameterSet&);
       ~NtupleMaker();
@@ -109,6 +112,7 @@ class NtupleMaker : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
       virtual void beginJob() override;
       virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
       virtual void endJob() override;
+      virtual void endRun(const edm::Run &run, const edm::EventSetup &es) override;
 
       virtual void fillEvent(const edm::Event& iEvent, bool isMC);
       virtual void fillTriggers(const edm::Event& iEvent);
@@ -134,6 +138,8 @@ class NtupleMaker : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
       edm::EDGetTokenT<std::vector<reco::Vertex>> t_pv;
       edm::EDGetTokenT<reco::GenParticleCollection> t_genparticle;
       edm::EDGetTokenT<GenEventInfoProduct> t_genevtinfo;
+      edm::EDGetTokenT<LHEEventProduct> t_lheevtproduct;
+      edm::EDGetTokenT<LHERunInfoProduct> t_lheruninfo;
       edm::EDGetTokenT<std::vector<pat::Muon>> t_muon;
       edm::EDGetTokenT<std::vector<pat::Electron>> t_electron;
       edm::EDGetTokenT<std::vector<pat::Jet>> t_jet;
@@ -189,6 +195,8 @@ t_prefweightdown    (consumes<double>                                    (iConfi
 t_pv                (consumes<std::vector<reco::Vertex>>                 (iConfig.getUntrackedParameter<edm::InputTag>("pvs"))),
 t_genparticle       (consumes<reco::GenParticleCollection>               (iConfig.getUntrackedParameter<edm::InputTag>("genparticles"))),
 t_genevtinfo        (consumes<GenEventInfoProduct>                       (iConfig.getUntrackedParameter<edm::InputTag>("genevtinfo"))),
+t_lheevtproduct     (consumes<LHEEventProduct>                           (iConfig.getUntrackedParameter<edm::InputTag>("lheevtproduct"))),
+t_lheruninfo        (mayConsume<LHERunInfoProduct, edm::InRun>           (iConfig.getUntrackedParameter<edm::InputTag>("lheruninfo"))),
 t_muon              (consumes<std::vector<pat::Muon>>                    (iConfig.getUntrackedParameter<edm::InputTag>("muons"))),
 t_electron          (consumes<std::vector<pat::Electron>>                (iConfig.getUntrackedParameter<edm::InputTag>("electrons"))),
 t_jet               (consumes<std::vector<pat::Jet>>                     (iConfig.getUntrackedParameter<edm::InputTag>("jets"))),
@@ -271,6 +279,23 @@ void NtupleMaker::endJob()
 {
 }
 
+void NtupleMaker::endRun(const edm::Run &run, const edm::EventSetup &es) 
+{
+  edm::Handle<LHERunInfoProduct> h_lheruninfo;
+  run.getByToken(t_lheruninfo, h_lheruninfo);  
+
+  if(h_lheruninfo.isValid()){
+    int count = 0;
+    for (LHERunInfoProduct::headers_const_iterator it = h_lheruninfo->headers_begin(); it != h_lheruninfo->headers_end(); ++it, ++count) {
+      std::cout <<  "LHE run header #" << count << " tag " << it->tag() << " lines:\n";
+      for (auto line : it->lines())
+        std::cout << line;
+    }
+  }
+  else
+    cout << "No LHERunInfoProduct" << endl;
+}
+
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
 NtupleMaker::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
@@ -323,8 +348,20 @@ void NtupleMaker::fillEvent(const edm::Event &iEvent, bool isMC) {
   iEvent.getByToken(t_prefweightdown, h_prefweightdown);
   evt_.prefiringweightdown = (*h_prefweightdown);
 
+  edm::Handle<LHEEventProduct> h_lheevtproduct;
+  iEvent.getByToken(t_lheevtproduct, h_lheevtproduct);
+  // cout <<  h_lheevtproduct->weights().size() << endl;
+  // cout <<  h_lheevtproduct->weights()[0].id << endl;
+
+  // if (h_lheevtproduct->pdf())
+  //   std::cout << "PDF info: id = " << h_lheevtproduct->pdf()->id.first << "," << h_lheevtproduct->pdf()->id.second
+  //             << " x = " << h_lheevtproduct->pdf()->x.first << "," << h_lheevtproduct->pdf()->x.second
+  //             << " xPDF = " << h_lheevtproduct->pdf()->xPDF.first << "," << h_lheevtproduct->pdf()->xPDF.second
+  //             << " scalePDF = " << h_lheevtproduct->pdf()->scalePDF << "\n";
+  // else
+  //   std::cout << "PDF info empty\n";
+
   eventinfo_.push_back(evt_);
-  
 }
 
 void NtupleMaker::fillTriggers(const edm::Event &iEvent) {
@@ -482,6 +519,8 @@ void NtupleMaker::fillGenParticles(const edm::Event& iEvent) {
     genweight_ = h_genevtinfo->weight();
     // if(h_genevtinfo->weight()<0) genweight_=-1;
     // cout << genweight_ << endl;
+    // cout << h_genevtinfo->pdf()->id.first << endl;
+    // cout << h_genevtinfo->pdf()->id.second << endl;
 }
 
 void NtupleMaker::fillMuons(const edm::Event& iEvent) {

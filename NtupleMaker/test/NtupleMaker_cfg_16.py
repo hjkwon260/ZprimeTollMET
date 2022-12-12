@@ -10,13 +10,13 @@ options.register('isMC',
                   "isMC")
 options.parseArguments()
 
-print(options.isMC)
+# print(options.isMC)
 
 process = cms.Process("Demo")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
 
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
@@ -25,7 +25,8 @@ process.source = cms.Source("PoolSource",
         # 'file:/u/user/hjkwon/SE_UserHome/CRAB_UserFiles/crab_MINIAOD_BMII_2p5_mu_PU/191205_151624/0000/ZpBSM_pythia8_MiniAOD_10.root'
         # 'file:/u/user/hjkwon/testKW/CMSSW_10_2_0/src/ZprimeTollMET/NtupleMaker/test/F864DF5E-948B-E811-9770-A4BF01025B08.root'
         # '/store/mc/RunIISummer16MiniAODv3/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/MINIAODSIM/PUMoriond17_94X_mcRun2_asymptotic_v3-v1/00000/D6B5847A-10C5-E811-9B22-A4BF0108B062.root'
-      '/store/mc/RunIISummer20UL16MiniAODAPVv2/DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v1/70000/2EE3B436-E445-A440-A629-89CE2962EC9B.root'
+      # '/store/mc/RunIISummer20UL16MiniAODAPVv2/DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v1/70000/2EE3B436-E445-A440-A629-89CE2962EC9B.root',
+      '/store/mc/RunIISummer20UL17MiniAODv2/ZprimeTo2ChiTo2L_mZp-3300_mCH-1345_TuneCP2_13TeV-madgraph-pythia8/MINIAODSIM/106X_mc2017_realistic_v9-v2/2560000/61A65A8D-B9BB-E74E-A640-355954D2E77C.root'
     )
 )
 
@@ -44,6 +45,8 @@ process.ntuple = cms.EDAnalyzer('NtupleMaker',
   prefiringweightDown = cms.untracked.InputTag("prefiringweight:nonPrefiringProbDown"),
   genparticles = cms.untracked.InputTag("prunedGenParticles"),
   genevtinfo = cms.untracked.InputTag("generator"),
+  lheevtproduct = cms.untracked.InputTag("externalLHEProducer"),
+  lheruninfo = cms.untracked.InputTag("externalLHEProducer"),
   muons = cms.untracked.InputTag("slimmedMuons"),
   electrons = cms.untracked.InputTag("slimmedElectrons"),
   pvs = cms.untracked.InputTag("offlineSlimmedPrimaryVertices"),
@@ -120,7 +123,9 @@ process.p = cms.Path(process.prefiringweight*process.ntuple)
 #-- Local test --#
 if options.isMC==1:
     # process.source.fileNames = cms.untracked.vstring('/store/mc/RunIISummer16MiniAODv3/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/MINIAODSIM/PUMoriond17_94X_mcRun2_asymptotic_v3-v1/00000/D6B5847A-10C5-E811-9B22-A4BF0108B062.root')
-    process.source.fileNames = cms.untracked.vstring('/store/mc/RunIISummer20UL16MiniAODAPVv2/DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v1/70000/2EE3B436-E445-A440-A629-89CE2962EC9B.root')
+    # process.source.fileNames = cms.untracked.vstring('/store/mc/RunIISummer20UL16MiniAODAPVv2/DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v1/70000/2EE3B436-E445-A440-A629-89CE2962EC9B.root')
+    process.source.fileNames = cms.untracked.vstring('/store/mc/RunIISummer20UL16MiniAODAPVv2/ZprimeTo2ChiTo2L_mZp-3300_mCH-1345_TuneCP2_13TeV-madgraph-pythia8/MINIAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v2/2560000/0D9C6432-8901-F047-AA82-89872F93DEAF.root')
+    # process.source.fileNames = cms.untracked.vstring('/store/mc/RunIISummer20UL17MiniAODv2/ZprimeTo2ChiTo2L_mZp-3300_mCH-1345_TuneCP2_13TeV-madgraph-pythia8/MINIAODSIM/106X_mc2017_realistic_v9-v2/2560000/61A65A8D-B9BB-E74E-A640-355954D2E77C.root')
     # process.source.fileNames = cms.untracked.vstring('file:FCE4D694-BDD2-E911-BB3F-0CC47A78A340.root')
     # process.source.fileNames = cms.untracked.vstring(
     #   'file:Zprime_reMiniaod94X_2p5_PU_mu_1.root',
@@ -129,6 +134,7 @@ if options.isMC==1:
     #   'file:Zprime_reMiniaod94X_2p5_PU_mu_4.root',
       
     #   )
+    print(process.source.fileNames)
 else:
     process.source.fileNames = cms.untracked.vstring('/store/data/Run2016B/SingleMuon/MINIAOD/17Jul2018_ver1-v1/80000/F2494388-1D8C-E811-BB8E-0242AC1C0502.root')
 
